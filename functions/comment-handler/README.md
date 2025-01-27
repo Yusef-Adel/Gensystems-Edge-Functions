@@ -1,120 +1,182 @@
-Edge Function: Comment Management API
-This edge function is designed to handle the insertion, updating, and fetching of comments for a specific question, attempt, and student in a Supabase database. It is built using Deno and integrates with Supabase for database operations.
+# Supabase Edge Function: Comment Handler
 
-Table of Contents
-Overview
+This Edge Function allows for inserting, updating, and fetching comments in the `answers_comment` table.
 
-Environment Variables
+---
 
-API Endpoint
+## Features
 
-Request Body
+- **Insert/Update Comments**: Add or update comments in the database based on `question_id`, `attempt_id`, and `student_id`.
+- **Fetch Comments**: Retrieve comments based on all three parameters (`question_id`, `attempt_id`, `student_id`).
+- **Robust Error Handling**: Handles invalid JSON payloads, missing parameters, and database errors.
+- **Consistent Responses**: Returns clear and descriptive messages along with HTTP status codes.
 
-Response Format
+---
 
-Error Handling
+## Request Structure
 
-Examples
+### HTTP Method
+POST
 
-Dependencies
+### Request Headers
+| Header              | Value                       |
+|---------------------|-----------------------------|
+| `Content-Type`      | `application/json`          |
+| `Authorization`     | `Bearer YOUR_AUTH_TOKEN`    |
 
-Overview
-The edge function serves as an API endpoint to:
-
-Insert or update a comment in the answers_comment table.
-
-Fetch comments from the answers_comment table based on provided parameters.
-
-The function uses the SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables to connect to the Supabase database.
-
-Environment Variables
-The following environment variables are required for the function to work:
-
-SUPABASE_URL: The URL of your Supabase project.
-
-SUPABASE_SERVICE_ROLE_KEY: The service role key for your Supabase project.
-
-API Endpoint
-The function is served at the root endpoint (/). It accepts POST requests with a JSON body.
-
-Request Body
+### Request Body
 The request body must be a JSON object with the following fields:
 
-Field	Type	Required	Description
-is_insert	Boolean	Yes	true for insert/update operations, false for fetching comments.
-question_id	String	Yes	The ID of the question associated with the comment.
-attempt_id	String	Yes	The ID of the attempt associated with the comment.
-student_id	String	Yes	The ID of the student associated with the comment.
-comment_text	String	Conditional	Required if is_insert is true. The text of the comment to insert/update.
-Response Format
-The response is a JSON object with the following structure:
+#### For Insert/Update
+| Field          | Type    | Required | Description                                      |
+|----------------|---------|----------|--------------------------------------------------|
+| `is_insert`    | Boolean | Yes      | Set to `true` for insert/update operations.      |
+| `question_id`  | Number  | Yes      | The ID of the question.                         |
+| `attempt_id`   | Number  | Yes      | The ID of the attempt.                          |
+| `student_id`   | Number  | Yes      | The ID of the student.                          |
+| `comment_text` | String  | Yes      | The text of the comment.                        |
 
-Field	Type	Description
-status	String	The status of the operation (success or error).
-status_code	Number	The HTTP status code of the response.
-message	String	A message describing the result of the operation.
-data	Object	The data returned by the operation (e.g., inserted/updated comment or fetched comments).
-Error Handling
-The function handles errors gracefully and returns appropriate HTTP status codes and error messages. Common errors include:
+#### For Fetch
+| Field          | Type    | Required | Description                                      |
+|----------------|---------|----------|--------------------------------------------------|
+| `is_insert`    | Boolean | Yes      | Set to `false` for fetch operations.            |
+| `question_id`  | Number  | Yes      | The ID of the question.                         |
+| `attempt_id`   | Number  | Yes      | The ID of the attempt.                          |
+| `student_id`   | Number  | Yes      | The ID of the student.                          |
 
-400 Bad Request: Missing or invalid required fields.
+---
 
-404 Not Found: No comments found for the provided parameters.
+## Response Structure
 
-500 Internal Server Error: Database or unexpected errors.
+### Success Responses
 
-Examples
-Insert/Update a Comment
-Request:
-
-json
-Copy
-{
-  "is_insert": true,
-  "question_id": "q1",
-  "attempt_id": "a1",
-  "student_id": "s1",
-  "comment_text": "This is a sample comment."
-}
-Response:
-
-json
-Copy
+#### Insert/Update Success
+```json
 {
   "status": "success",
   "status_code": 200,
   "message": "Comment added successfully.",
   "data": {
-    "comment_id": "c1",
-    "comment_text": "This is a sample comment."
+    "comment_id": 123,
+    "question_id": 1,
+    "attempt_id": 2,
+    "student_id": 3,
+    "comment_text": "This is a test comment",
+    "created_at": "2023-01-01T00:00:00Z"
   }
 }
-Fetch Comments
-Request:
+```
 
-json
-Copy
-{
-  "is_insert": false,
-  "question_id": "q1",
-  "attempt_id": "a1",
-  "student_id": "s1"
-}
-Response:
-
-json
-Copy
+#### Fetch Success
+```json
 {
   "status": "success",
   "status_code": 200,
   "message": "Comments fetched successfully.",
   "data": [
     {
-      "comment_id": "c1",
-      "question_id": "q1",
-      "attempt_id": "a1",
-      "student_id": "s1",
-      "comment_text": "This is a sample comment."
+      "comment_id": 123,
+      "question_id": 1,
+      "attempt_id": 2,
+      "student_id": 3,
+      "comment_text": "This is a test comment",
+      "created_at": "2023-01-01T00:00:00Z"
     }
   ]
 }
+```
+
+### Error Responses
+
+#### Invalid JSON Payload
+```json
+{
+  "status": "error",
+  "status_code": 400,
+  "message": "Invalid JSON payload. Please provide valid JSON in the request body."
+}
+```
+
+#### Missing Parameters (Insert/Update)
+```json
+{
+  "status": "error",
+  "status_code": 400,
+  "message": "Missing required fields for insert/update: question_id, attempt_id, student_id, or comment_text."
+}
+```
+
+#### Missing Parameters (Fetch)
+```json
+{
+  "status": "error",
+  "status_code": 400,
+  "message": "All parameters (question_id, attempt_id, student_id) are required for fetching data."
+}
+```
+
+#### No Data Found
+```json
+{
+  "status": "error",
+  "status_code": 404,
+  "message": "No comments found for the provided parameters."
+}
+```
+
+#### Database Error
+```json
+{
+  "status": "error",
+  "status_code": 500,
+  "message": "Failed to fetch comments from the database."
+}
+```
+
+#### Unexpected Error
+```json
+{
+  "status": "error",
+  "status_code": 500,
+  "message": "An unexpected error occurred.",
+  "details": "Detailed error message."
+}
+```
+
+---
+
+## Example Requests
+
+### Insert/Update Request
+```bash
+curl -X POST 'https://YOUR_SUPABASE_FUNCTION_URL' \
+--header 'Authorization: Bearer YOUR_AUTH_TOKEN' \
+--header 'Content-Type: application/json' \
+--data '{
+  "is_insert": true,
+  "question_id": 1,
+  "attempt_id": 2,
+  "student_id": 3,
+  "comment_text": "This is a test comment"
+}'
+```
+
+### Fetch Request
+```bash
+curl -X POST 'https://YOUR_SUPABASE_FUNCTION_URL' \
+--header 'Authorization: Bearer YOUR_AUTH_TOKEN' \
+--header 'Content-Type: application/json' \
+--data '{
+  "is_insert": false,
+  "question_id": 1,
+  "attempt_id": 2,
+  "student_id": 3
+}'
+```
+
+---
+
+## Notes
+- Ensure all required fields are provided to avoid validation errors.
+- Use the correct `Authorization` token to authenticate requests.
+
