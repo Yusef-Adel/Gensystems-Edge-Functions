@@ -11,6 +11,7 @@ This repository includes the following edge functions:
 1. **Answer Generation**
 2. **Exam Generation**
 3. **Comment Handler**
+4. **Results Handler** (Newly Added)
 
 Each function is located in the `functions/` folder and is designed to be robust, scalable, and easy to integrate.
 
@@ -23,6 +24,7 @@ Each function is located in the `functions/` folder and is designed to be robust
   - [Answer Generation](#answer-generation)
   - [Exam Generation](#exam-generation)
   - [Comment Handler](#comment-handler)
+  - [Results Handler](#results-handler)
 - [How to Deploy](#how-to-deploy)
 - [Contributing](#contributing)
 - [License](#license)
@@ -48,6 +50,7 @@ To explore the repository and use the edge functions:
    - `answer-generation`
    - `exam-generation`
    - `comment-handler`
+   - `results-handler`
 
 4. Follow the specific documentation for each edge function to configure and deploy it.
 
@@ -84,6 +87,18 @@ To explore the repository and use the edge functions:
 
 ---
 
+### Results Handler
+
+- **Purpose**: Compute quiz results for a given user attempt, including correct, incorrect, and unanswered questions.
+- **Endpoint**: `https://adbeenaoohcynafrzkjj.supabase.co/functions/v1/results-handler`
+- **Documentation**: Refer to the `README.md` file in the `functions/results-handler/` folder for setup instructions and API details.
+- **Key Features**:
+  - Fetches total questions for a quiz.
+  - Counts correct and wrong answers.
+  - Calculates unanswered questions efficiently.
+
+---
+
 ## How to Deploy
 
 To deploy the edge functions:
@@ -105,6 +120,7 @@ To deploy the edge functions:
    - `answer-generation`
    - `exam-generation`
    - `comment-handler`
+   - `results-handler`
 
 ---
 
