@@ -118,22 +118,16 @@ WHERE user_id = $user_id AND quiz_id = $quiz_id AND attempt_id = $attempt_id;
 ---
 
 ## Example Integration
-### JavaScript Fetch Example
-```javascript
-fetch('https://adbeenaoohcynafrzkjj.supabase.co/functions/v1/results-handler', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    user_id: 1,
-    quiz_id: 10,
-    attempt_id: 25
-  })
-})
-  .then(response => response.json())
-  .then(data => console.log(data))
-  .catch(error => console.error('Error:', error));
+### cURL Request Example
+```bash
+curl -X POST \
+  'https://adbeenaoohcynafrzkjj.supabase.co/functions/v1/results-handler' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "user_id": 1,
+    "quiz_id": 10,
+    "attempt_id": 25
+  }'
 ```
 
 ---
