@@ -11,7 +11,7 @@ This repository includes the following edge functions:
 1. **Answer Generation**
 2. **Exam Generation**
 3. **Comment Handler**
-4. **Results Handler** (Newly Added)
+4. **Results Handler**
 
 Each function is located in the `functions/` folder and is designed to be robust, scalable, and easy to integrate.
 
