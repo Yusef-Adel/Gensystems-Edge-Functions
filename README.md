@@ -11,7 +11,6 @@ This repository includes the following edge functions:
 1. **Answer Generation**
 2. **Exam Generation**
 3. **Comment Handler**
-4. **Results Handler**
 
 Each function is located in the `functions/` folder and is designed to be robust, scalable, and easy to integrate.
 
@@ -87,17 +86,6 @@ To explore the repository and use the edge functions:
 
 ---
 
-### Results Handler
-
-- **Purpose**: Compute quiz results for a given user attempt, including correct, incorrect, and unanswered questions.
-- **Endpoint**: `https://adbeenaoohcynafrzkjj.supabase.co/functions/v1/results-handler`
-- **Documentation**: Refer to the `README.md` file in the `functions/results-handler/` folder for setup instructions and API details.
-- **Key Features**:
-  - Fetches total questions for a quiz.
-  - Counts correct and wrong answers.
-  - Calculates unanswered questions efficiently.
-
----
 
 ## How to Deploy
 
