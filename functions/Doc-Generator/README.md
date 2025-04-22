@@ -1,4 +1,4 @@
-Doc Generator Supabase Edge Function
+Exam Docs Generator Supabase Edge Function
 =====================================
 
 A Supabase Edge Function that generates DOCX exam papers with Arabic RTL support and stores them in Supabase Storage. It checks for a cached file before regenerating, and returns a public URL to the generated or cached document.
@@ -99,7 +99,7 @@ Installation & Deployment
 
 3.  **Invoke the function**
 
-    -   Via HTTP POST to `https://<project-ref>.functions.supabase.co/exam-generator`
+    -   Via HTTP POST to `https://adbeenaoohcynafrzkjj.supabase.co/functions/v1/pdf-generator`
 
 * * * * *
 
@@ -319,7 +319,7 @@ Add test calls:
 
 ```
 # 1. Generate exam for quiz ID 123
-curl -X POST https://<project-ref>.functions.supabase.co/exam-generator\
+curl -X POST https://adbeenaoohcynafrzkjj.supabase.co/functions/v1/pdf-generator\
   -H "Content-Type: application/json"\
   -d '{"quiz_id": 123}'
 # Expected response:
@@ -329,7 +329,7 @@ curl -X POST https://<project-ref>.functions.supabase.co/exam-generator\
 
 ```
 # 2. Download the generated DOCX file
-curl -L $(curl -s -X POST https://<project-ref>.functions.supabase.co/exam-generator\
+curl -L $(curl -s -X POST https://adbeenaoohcynafrzkjj.supabase.co/functions/v1/pdf-generator\
     -H "Content-Type: application/json"\
     -d '{"quiz_id": 123}' | jq -r .docxUrl) -o quiz_123.docx
 
