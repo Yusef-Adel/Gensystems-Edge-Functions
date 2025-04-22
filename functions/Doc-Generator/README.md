@@ -1,4 +1,4 @@
-Exam Generator Supabase Edge Function
+Doc Generator Supabase Edge Function
 =====================================
 
 A Supabase Edge Function that generates DOCX exam papers with Arabic RTL support and stores them in Supabase Storage. It checks for a cached file before regenerating, and returns a public URL to the generated or cached document.
