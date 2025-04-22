@@ -1,161 +1,237 @@
+Exam Generation Edge Function
+=============================
 
-# Updated API Documentation for Quiz Edge Function
+This document describes the Supabase Edge Function that generates and returns exams in both **test** and **live** modes. It handles:
 
-## Purpose
+-   **Test mode**: No DB writes, calls the external test API, returns generated exam JSON plus metadata.
 
-This Edge Function:
-1. **Generates a quiz** based on provided parameters.
-2. **Stores the quiz** along with its questions and options into the database.
-3. **Calls an external API** to update the attempt status after successful insertion, including the generated `quiz_id`.
+-   **Live mode**: Inserts a new `quiz` record, generates exam via external API, writes questions & options to the database, updates attempt status, and returns success.
 
----
+* * * * *
 
-## Endpoint
+Table of Contents
+-----------------
 
-- **URL**:  
-  - Local: `http://localhost:54321/functions/v1/exam-generation`  
-  - Production: `https://<YOUR_SUPABASE_PROJECT>.functions.supabase.co/functions/v1/exam-generation`
+1.  [Requirements & Imports](https://chatgpt.com/g/g-p-67f7c2fb9efc8191a6bc4795f4fb61a0-youssef-adel/c/6800cd71-cbc4-8011-980e-6ce0ed4ada5d?model=o4-mini-high#requirements--imports)
 
-- **Method**: `POST`
+2.  [Environment Variables](https://chatgpt.com/g/g-p-67f7c2fb9efc8191a6bc4795f4fb61a0-youssef-adel/c/6800cd71-cbc4-8011-980e-6ce0ed4ada5d?model=o4-mini-high#environment-variables)
 
----
+3.  [API Keys & Modes](https://chatgpt.com/g/g-p-67f7c2fb9efc8191a6bc4795f4fb61a0-youssef-adel/c/6800cd71-cbc4-8011-980e-6ce0ed4ada5d?model=o4-mini-high#api-keys--modes)
 
-## Parameters
+4.  [HTTP Endpoint](https://chatgpt.com/g/g-p-67f7c2fb9efc8191a6bc4795f4fb61a0-youssef-adel/c/6800cd71-cbc4-8011-980e-6ce0ed4ada5d?model=o4-mini-high#http-endpoint)
 
-### **Required Parameters**
+5.  [Request Payload](https://chatgpt.com/g/g-p-67f7c2fb9efc8191a6bc4795f4fb61a0-youssef-adel/c/6800cd71-cbc4-8011-980e-6ce0ed4ada5d?model=o4-mini-high#request-payload)
 
-| Parameter                  | Type      | Description                                                                                     |
-|----------------------------|-----------|-------------------------------------------------------------------------------------------------|
-| `exam_difficulty_level`    | `string`  | The difficulty level of the exam (e.g., `easy`, `medium`, `hard`).                             |
-| `educational_system`       | `string`  | The name of the educational system (e.g., `CBSE`, `IB`).                                       |
-| `academic_year`            | `string`  | The academic year for the quiz (e.g., `2023`).                                                |
-| `semester`                 | `string`  | The semester of the academic year (e.g., `First`, or semester ID like `7`).                   |
-| `subject`                  | `string`  | The name of the subject (e.g., `Mathematics`, `Science`).                                      |
-| `chapter`                  | `string`  | The chapter of the subject to generate questions from (e.g., `Geometry`, `Algebra`).          |
-| `number_of_mcq_questions`  | `number`  | The number of MCQ (multiple-choice questions) to generate.                                     |
-| `number_of_true_false_questions` | `number` | The number of True/False questions to generate.                                               |
-| `created_by`               | `number`  | The user ID of the quiz creator (must exist in the `users` table).                             |
-| `subject_id`               | `number`  | The ID of the subject (must exist in the `subjects` table).                                    |
-| `is_active`                | `boolean` | Whether the quiz is active or not (e.g., `true`, `false`).                                     |
-| `class`                    | `string`  | The class the quiz is intended for (e.g., `10A`, `15A`).                                       |
-| `duration`                 | `number`  | The duration of the quiz in minutes (e.g., `30`, `60`).                                        |
-| `questions_types`          | `array`   | The types of questions included in the quiz (e.g., `['mcq', 'true_false']`).                 |
-| `difficulty`               | `string`  | The overall difficulty level of the quiz (e.g., `medium`, `hard`).                            |
-| `class_id`                 | `number`  | The ID of the class (if applicable).                                                          |
-| `code`                     | `string`  | A unique code for the quiz (e.g., `quiz-code-123`).                                            |
-| `term_id`                  | `number`  | The term/semester ID (must exist in the `semester` table).                                     |
-| `attempt`                  | `string`  | The unique reference ID for the attempt status to be updated (e.g., `1737304893057x361394713141968900`). |
-| `version_test`             | `string`  | The version to use for the external API call (e.g., `version-test`).                          |
-| `bubble_quiz_id`           | `string`  | The unique bubble quiz ID for the final API call.                                             |
+6.  [Test Mode Flow](https://chatgpt.com/g/g-p-67f7c2fb9efc8191a6bc4795f4fb61a0-youssef-adel/c/6800cd71-cbc4-8011-980e-6ce0ed4ada5d?model=o4-mini-high#test-mode-flow)
 
----
+7.  [Live Mode Flow](https://chatgpt.com/g/g-p-67f7c2fb9efc8191a6bc4795f4fb61a0-youssef-adel/c/6800cd71-cbc4-8011-980e-6ce0ed4ada5d?model=o4-mini-high#live-mode-flow)
 
-## Example Request
+8.  [Database Schema](https://chatgpt.com/g/g-p-67f7c2fb9efc8191a6bc4795f4fb61a0-youssef-adel/c/6800cd71-cbc4-8011-980e-6ce0ed4ada5d?model=o4-mini-high#database-schema)
 
-### **Request URL**
-```bash
-https://adbeenaoohcynafrzkjj.supabase.co/functions/v1/exam-generation
+9.  [Validation Logic](https://chatgpt.com/g/g-p-67f7c2fb9efc8191a6bc4795f4fb61a0-youssef-adel/c/6800cd71-cbc4-8011-980e-6ce0ed4ada5d?model=o4-mini-high#validation-logic)
+
+10. [Error Handling](https://chatgpt.com/g/g-p-67f7c2fb9efc8191a6bc4795f4fb61a0-youssef-adel/c/6800cd71-cbc4-8011-980e-6ce0ed4ada5d?model=o4-mini-high#error-handling)
+
+* * * * *
+
+Requirements & Imports
+----------------------
+
+```
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 ```
 
-### **Request Headers**
-```json
-{
-  "Authorization": "Bearer YOUR_SUPABASE_ANON_KEY",
-  "Content-Type": "application/json"
-}
+-   **Deno std/http** for serving requests
+
+-   **@supabase/supabase-js v2** for DB & Storage
+
+* * * * *
+
+Environment Variables
+---------------------
+
+-   `SUPABASE_URL`
+
+-   `SUPABASE_SERVICE_ROLE_KEY`
+
+Used to initialize the Supabase client:
+
+```
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+);
+
 ```
 
-### **Request Body**
-```json
-{
-  "exam_difficulty_level": "medium",
-  "educational_system": "CBSE",
-  "academic_year": "2023",
-  "semester": "7",
-  "subject": "Mathematics",
-  "chapter": "Geometry",
-  "number_of_mcq_questions": 5,
-  "number_of_true_false_questions": 5,
-  "created_by": 37,
-  "subject_id": 18,
-  "is_active": true,
-  "class": "15A",
-  "duration": 30,
-  "questions_types": ["mcq", "true_false"],
-  "difficulty": "medium",
-  "class_id": 13,
-  "code": "quiz-code-123",
-  "term_id": 7,
-  "attempt": "1737304893057x361394713141968900",
-  "version_test": "version-test",
-  "bubble_quiz_id": "1737834765398x969376658481400600"
-}
+* * * * *
+
+API Keys & Modes
+----------------
+
+-   **Live Mode** uses:
+
+    -   `AR_API_KEY` (Arabic)
+
+    -   `EN_API_KEY` (English)
+
+-   **Test Mode** uses:
+
+    -   `AR_TEST_API_KEY`
+
+    -   `EN_TEST_API_KEY`
+
+All calls go to `https://genexam.ai` (live) or `https://test.genexam.ai` (test).
+
+* * * * *
+
+HTTP Endpoint
+-------------
+
+```
+POST /functions/v1/exam-generation
+Content-Type: application/json
+Authorization: Bearer <SUPABASE_JWT>
+
 ```
 
----
+-   Only `POST` is allowed.
 
-## Response
+-   Returns `application/json`.
 
-### **Success Response**
-```json
-{
-  "status": "success",
-  "message": "Quiz, questions, options inserted, and exam status updated successfully",
-  "finalApiResponse": { "your_final_api_response_data_here" }
-}
+* * * * *
+
+Request Payload
+---------------
+
+Common fields:
+
+| Field | Type | Required in Live | Description |
+| --- | --- | --- | --- |
+| `mode` | `string` | No (default=live) | `"live"` or `"test"` |
+| `lang` | `string` | Yes | `"ar"` or `"en"` |
+| `exam_difficulty_level` | `string` | Yes | Difficulty (e.g. `"سهل"` / `"easy"`) |
+| `educational_system` | `string` | Yes | Curriculum name |
+| `academic_year` | `string` | Yes | Grade/year |
+| `semester` | `string` | Yes | Semester identifier |
+| `subject` | `string` | Yes | Subject name |
+| `chapter` | `string[]` | Yes | List of chapters |
+| `number_of_mcq_questions` | `number` | Yes | Count of MCQs |
+| `number_of_true_false_questions` | `number` | Yes | Count of True/False |
+| `attempt_id` | `string` | Test only | Student's attempt identifier |
+| `bubble_quiz_id` | `string` | Test only | Bubble.io quiz ID for status update in test mode |
+
+Live‐only additional fields:
+
+| Field | Type | Required in Live | Description |
+| --- | --- | --- | --- |
+| `created_by` | `string` | Yes | User ID of quiz creator |
+| `subject_id` | `string` | Yes | Foreign key to `subjects` table |
+| `is_active` | `string` | Yes | `"true"` / `"false"` |
+| `class` | `string` | Yes | Class name/identifier |
+| `duration` | `string` | Yes | Duration in minutes |
+| `questions_types` | --- | Yes | Array of question types |
+| `difficulty` | `string` | Yes | Overall quiz difficulty |
+| `class_id`, `code`, `term_id` | `string` | Yes | Additional quiz metadata |
+
+* * * * *
+
+Test Mode Flow
+--------------
+
+1.  **Validate** required test fields.
+
+2.  **Determine** `language` (`ar`/`en`).
+
+3.  **Set** `selectedApiKey` and header (`AR-API-Key` / `EN-API-Key`).
+
+4.  **POST** to `https://test.genexam.ai/api/{lang}/query/generate-exam`.
+
+5.  **On success**, attach `metadata = { attempt_id, bubble_quiz_id }`.
+
+6.  **Return** `{ status: "success", data: <API response> }`.
+
+* * * * *
+
+Live Mode Flow
+--------------
+
+1.  **Validate** all live mode parameters.
+
+2.  **Select** API key & URL (`https://api.genexam.ai/api/{lang}/...`).
+
+3.  **Insert** a new row in `quizzes` table, retrieve `quiz_id`.
+
+4.  **Sanitize** chapter array, re‑validate.
+
+5.  **Build** `apiBody` for external API.
+
+6.  **Fetch** exam from external API.
+
+7.  **Validate** `responseData.exam.mcq_questions` & `true_false_questions`.
+
+8.  **Insert** into `questions` table (MCQ + True/False).
+
+9.  **Build & Insert** `options` rows with `is_correct`.
+
+10. **Update** external status via GET to GenExam webhook.
+
+11. **Return** `{ status: "success", finalApiResponse: ... }`.
+
+* * * * *
+
+Database Schema
+---------------
+
+```
+-- quizzes
+quiz_id        int4 PRIMARY KEY
+created_by     int4 NOT NULL
+subject_id     int4 NOT NULL
+duration       int4 NOT NULL
+-- users
+user_id        int4 PRIMARY KEY
+username       varchar NOT NULL
+-- subjects
+subject_id     int4 PRIMARY KEY
+subject_name   varchar NOT NULL
+-- questions
+question_id    int4 PRIMARY KEY
+quiz_id        int4 REFERENCES quizzes
+question_text  text
+question_type  varchar
+-- options
+option_id      int4 PRIMARY KEY
+question_id    int4 REFERENCES questions
+option_text    text
+is_correct     boolean
+
 ```
 
-### **Error Responses**
+* * * * *
 
-#### **Validation Error** (Missing or invalid parameters)
-```json
-{
-  "status": "error",
-  "error": {
-    "parameter": "missing_or_invalid",
-    "message": "Invalid or missing parameters"
-  }
-}
-```
+Validation Logic
+----------------
 
-#### **Database Insertion Error**
-```json
-{
-  "status": "error",
-  "message": "Failed to insert questions into database",
-  "details": { "your_database_error_details_here" }
-}
-```
+-   **Test mode**: all listed fields must be non‑empty (`string` non‑blank, `array` non‑empty).
 
-#### **Final API Call Error**
-```json
-{
-  "status": "error",
-  "message": "Failed to update exam status",
-  "details": { "your_final_api_error_details_here" }
-}
-```
+-   **Live mode**: every field in `requiredFields` must exist; `chapter` must be an array.
 
----
+* * * * *
 
-## Database Tables and Relations
+Error Handling
+--------------
 
-### **Tables Used**
+-   **HTTP method** ≠ POST → `405 Method Not Allowed`.
 
-- **`quizzes`**: Stores the main quiz information.
-- **`questions`**: Stores the questions for each quiz.
-- **`options`**: Stores the answer options for multiple-choice and true/false questions.
+-   **Invalid JSON** → `400 Invalid JSON payload`.
 
-### **Foreign Key Relations**
+-   **Missing/invalid params** → `400` with descriptive message.
 
-1. `created_by` → `users.user_id`
-2. `subject_id` → `subjects.subject_id`
-3. `term_id` → `semester.semester_id`
+-   **DB errors** → `500` with context (`quiz not found`, `insert failed`).
 
----
+-   **External API errors** → `500`, logs response body/details.
 
-## Key Notes
-
-- Ensure that `created_by`, `subject_id`, and `term_id` values exist in their respective tables before making the request.
-- The `attempt`, `version_test`, and `bubble_quiz_id` parameters are dynamic and should be passed in the request body to call the external API.
-- The generated `quiz_id` is included in the final API call to associate the quiz with its status update.
+* * * * *
